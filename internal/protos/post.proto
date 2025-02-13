@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package post;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/imhasandl/post-service/internal/protos";
+
+service PostService {
+   rpc CreatePost (CreatePostRequest) returns (CreatePostResponse) {}
+   rpc GetPostByUsername (GetPostByUsernameRequest) returns (GetPostByUsernameResponse) {}
+   rpc ReportPost (ReportPostRequest) returns (ReportPostResponse) {}
+}
+
+message CreatePostRequest {
+   string body = 1;
+}
+
+message CreatePostResponse {
+   Post post = 1;
+}
+
+message GetPostByUsernameRequest {
+   string username = 1; 
+}
+
+message GetPostByUsernameResponse {
+   Post post = 1;
+}
+
+message ReportPostRequest {
+   string id = 1;
+   string reason = 2;
+}
+
+message ReportPostResponse {
+   ReportPost report_post = 1;
+}
+
+message Post {
+   string id = 1;
+   google.protobuf.Timestamp created_at = 2;
+   google.protobuf.Timestamp updated_at = 3;
+   string posted_by = 4;
+   string body = 5;
+   int32 views = 6;
+   int32 likes = 7;
+}
+
+message ReportPost {
+   string id = 1;
+   google.protobuf.Timestamp reported_at = 2;
+   string reported_by = 3;
+   string reason = 4;
+}
