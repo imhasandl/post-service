@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 
+	"github.com/imhasandl/post-service/cmd/server"
+	"github.com/imhasandl/post-service/internal/database"
 	pb "github.com/imhasandl/post-service/internal/protos"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
@@ -46,7 +48,7 @@ func main() {
 	defer dbConn.Close()
 	dbQueries := database.New(dbConn)
 
-	postServer := 
+	postServer := server.NewServer(dbQueries, tokenSecret)
 
 	s := grpc.NewServer()
 	pb.RegisterPostServiceServer(s, postServer)

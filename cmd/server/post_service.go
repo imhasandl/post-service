@@ -1,8 +1,9 @@
-package main
+package server
 
 import (
 	"context"
 
+	"github.com/imhasandl/post-service/internal/database"
 	pb "github.com/imhasandl/post-service/internal/protos"
 )
 	
