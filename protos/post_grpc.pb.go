@@ -23,6 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PostServiceClient interface {
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error)
+	GetPostByID(ctx context.Context, in *GetPostByIDRequest, opts ...grpc.CallOption) (*GetPostByIDResponse, error)
+	GetAllPosts(ctx context.Context, in *GetAllPostsRequest, opts ...grpc.CallOption) (*GetAllPostsResponse, error)
 	ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*ReportPostResponse, error)
 }
 
@@ -43,6 +45,24 @@ func (c *postServiceClient) CreatePost(ctx context.Context, in *CreatePostReques
 	return out, nil
 }
 
+func (c *postServiceClient) GetPostByID(ctx context.Context, in *GetPostByIDRequest, opts ...grpc.CallOption) (*GetPostByIDResponse, error) {
+	out := new(GetPostByIDResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/GetPostByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) GetAllPosts(ctx context.Context, in *GetAllPostsRequest, opts ...grpc.CallOption) (*GetAllPostsResponse, error) {
+	out := new(GetAllPostsResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/GetAllPosts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *postServiceClient) ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*ReportPostResponse, error) {
 	out := new(ReportPostResponse)
 	err := c.cc.Invoke(ctx, "/post.PostService/ReportPost", in, out, opts...)
@@ -57,6 +77,8 @@ func (c *postServiceClient) ReportPost(ctx context.Context, in *ReportPostReques
 // for forward compatibility
 type PostServiceServer interface {
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error)
+	GetPostByID(context.Context, *GetPostByIDRequest) (*GetPostByIDResponse, error)
+	GetAllPosts(context.Context, *GetAllPostsRequest) (*GetAllPostsResponse, error)
 	ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
@@ -67,6 +89,12 @@ type UnimplementedPostServiceServer struct {
 
 func (UnimplementedPostServiceServer) CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
+}
+func (UnimplementedPostServiceServer) GetPostByID(context.Context, *GetPostByIDRequest) (*GetPostByIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPostByID not implemented")
+}
+func (UnimplementedPostServiceServer) GetAllPosts(context.Context, *GetAllPostsRequest) (*GetAllPostsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllPosts not implemented")
 }
 func (UnimplementedPostServiceServer) ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportPost not implemented")
@@ -102,6 +130,42 @@ func _PostService_CreatePost_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostService_GetPostByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPostByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).GetPostByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/GetPostByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).GetPostByID(ctx, req.(*GetPostByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_GetAllPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).GetAllPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/GetAllPosts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).GetAllPosts(ctx, req.(*GetAllPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PostService_ReportPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportPostRequest)
 	if err := dec(in); err != nil {
@@ -130,6 +194,14 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePost",
 			Handler:    _PostService_CreatePost_Handler,
+		},
+		{
+			MethodName: "GetPostByID",
+			Handler:    _PostService_GetPostByID_Handler,
+		},
+		{
+			MethodName: "GetAllPosts",
+			Handler:    _PostService_GetAllPosts_Handler,
 		},
 		{
 			MethodName: "ReportPost",
