@@ -9,3 +9,10 @@ VALUES (
    0,
    0
 ) RETURNING *;
+
+-- name: GetPostByID :one
+SELECT * FROM posts
+WHERE id = $1;
+
+-- name: GetAllPosts :many
+SELECT * FROM posts;

@@ -16,6 +16,13 @@ type Post struct {
 	UpdatedAt time.Time
 	PostedBy  string
 	Body      string
-	Likes     int64
-	Views     int64
+	Likes     int32
+	Views     int32
+}
+
+type Report struct {
+	ID         uuid.UUID
+	ReportedAt time.Time
+	ReportedBy string
+	Reason     string
 }
