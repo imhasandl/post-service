@@ -23,7 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PostServiceClient interface {
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error)
-	GetPostByUsername(ctx context.Context, in *GetPostByUsernameRequest, opts ...grpc.CallOption) (*GetPostByUsernameResponse, error)
 	ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*ReportPostResponse, error)
 }
 
@@ -44,15 +43,6 @@ func (c *postServiceClient) CreatePost(ctx context.Context, in *CreatePostReques
 	return out, nil
 }
 
-func (c *postServiceClient) GetPostByUsername(ctx context.Context, in *GetPostByUsernameRequest, opts ...grpc.CallOption) (*GetPostByUsernameResponse, error) {
-	out := new(GetPostByUsernameResponse)
-	err := c.cc.Invoke(ctx, "/post.PostService/GetPostByUsername", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *postServiceClient) ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*ReportPostResponse, error) {
 	out := new(ReportPostResponse)
 	err := c.cc.Invoke(ctx, "/post.PostService/ReportPost", in, out, opts...)
@@ -67,7 +57,6 @@ func (c *postServiceClient) ReportPost(ctx context.Context, in *ReportPostReques
 // for forward compatibility
 type PostServiceServer interface {
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error)
-	GetPostByUsername(context.Context, *GetPostByUsernameRequest) (*GetPostByUsernameResponse, error)
 	ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
@@ -78,9 +67,6 @@ type UnimplementedPostServiceServer struct {
 
 func (UnimplementedPostServiceServer) CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
-}
-func (UnimplementedPostServiceServer) GetPostByUsername(context.Context, *GetPostByUsernameRequest) (*GetPostByUsernameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPostByUsername not implemented")
 }
 func (UnimplementedPostServiceServer) ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportPost not implemented")
@@ -116,24 +102,6 @@ func _PostService_CreatePost_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PostService_GetPostByUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPostByUsernameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PostServiceServer).GetPostByUsername(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/post.PostService/GetPostByUsername",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostServiceServer).GetPostByUsername(ctx, req.(*GetPostByUsernameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _PostService_ReportPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportPostRequest)
 	if err := dec(in); err != nil {
@@ -162,10 +130,6 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePost",
 			Handler:    _PostService_CreatePost_Handler,
-		},
-		{
-			MethodName: "GetPostByUsername",
-			Handler:    _PostService_GetPostByUsername_Handler,
 		},
 		{
 			MethodName: "ReportPost",

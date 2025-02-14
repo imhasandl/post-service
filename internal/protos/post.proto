@@ -8,7 +8,6 @@ option go_package = "github.com/imhasandl/post-service/internal/protos";
 
 service PostService {
    rpc CreatePost (CreatePostRequest) returns (CreatePostResponse) {}
-   rpc GetPostByUsername (GetPostByUsernameRequest) returns (GetPostByUsernameResponse) {}
    rpc ReportPost (ReportPostRequest) returns (ReportPostResponse) {}
 }
 
@@ -17,14 +16,6 @@ message CreatePostRequest {
 }
 
 message CreatePostResponse {
-   Post post = 1;
-}
-
-message GetPostByUsernameRequest {
-   string username = 1; 
-}
-
-message GetPostByUsernameResponse {
    Post post = 1;
 }
 
