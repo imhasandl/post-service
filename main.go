@@ -6,9 +6,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/imhasandl/post-service/cmd/server"
+	server "github.com/imhasandl/post-service/cmd/server"
 	"github.com/imhasandl/post-service/internal/database"
-	pb "github.com/imhasandl/post-service/internal/protos"
+	pb "github.com/imhasandl/post-service/protos"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

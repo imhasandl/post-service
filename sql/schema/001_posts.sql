@@ -5,8 +5,8 @@ CREATE TABLE posts (
    updated_at TIMESTAMP NOT NULL,
    posted_by TEXT NOT NULL,
    body TEXT NOT NULL,
-   likes BIGINT NOT NULL DEFAULT 0,
-   views BIGINT NOT NULL DEFAULT 0 
+   likes INT NOT NULL DEFAULT 0,
+   views INT NOT NULL DEFAULT 0 
 );
 
 -- +goose Down
