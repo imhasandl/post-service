@@ -19,8 +19,8 @@ VALUES (
    NOW(),
    $2,
    $3,
-   $4,
-   $5
+   0,
+   0
 ) RETURNING id, created_at, updated_at, posted_by, body, likes, views
 `
 
@@ -28,18 +28,10 @@ type CreatePostParams struct {
 	ID       uuid.UUID
 	PostedBy string
 	Body     string
-	Views    int64
-	Likes    int64
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, error) {
-	row := q.db.QueryRowContext(ctx, createPost,
-		arg.ID,
-		arg.PostedBy,
-		arg.Body,
-		arg.Views,
-		arg.Likes,
-	)
+	row := q.db.QueryRowContext(ctx, createPost, arg.ID, arg.PostedBy, arg.Body)
 	var i Post
 	err := row.Scan(
 		&i.ID,

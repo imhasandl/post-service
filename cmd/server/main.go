@@ -6,11 +6,12 @@ import (
 	"net"
 	"os"
 
-	"github.com/imhasandl/post-service/internal/database"
 	pb "github.com/imhasandl/post-service/internal/protos"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,6 +29,11 @@ func main() {
 		log.Fatalf("Set db connection in env")
 	}
 
+	tokenSecret := os.Getenv("TOKEN_SECRET")
+	if tokenSecret == "" {
+		log.Fatalf("Set db connection in env")
+	}
+
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listed: %v", err)
@@ -40,10 +46,10 @@ func main() {
 	defer dbConn.Close()
 	dbQueries := database.New(dbConn)
 
-	server := NewServer(dbQueries)
+	postServer := 
 
 	s := grpc.NewServer()
-	pb.RegisterPostServiceServer(s, server)
+	pb.RegisterPostServiceServer(s, postServer)
 
 	reflection.Register(s)
 	log.Printf("Server listening on %v", lis.Addr())
