@@ -18,7 +18,7 @@ WHERE id = $1;
 SELECT * FROM posts;
 
 -- name: ChangePost :one
-UPDATE posts SET body = $1
+UPDATE posts SET body = $1, updated_at = NOW()
 WHERE id = $2
 RETURNING *;
 
@@ -47,3 +47,6 @@ RETURNING *;
 SELECT unnest(liked_by) AS liker_id
 FROM posts
 WHERE id = $1;
+
+-- name: ResetPosts :exec
+TRUNCATE TABLE posts;

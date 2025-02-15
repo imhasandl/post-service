@@ -32,6 +32,7 @@ type PostServiceClient interface {
 	GetAllPosts(ctx context.Context, in *GetAllPostsRequest, opts ...grpc.CallOption) (*GetAllPostsResponse, error)
 	ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*ReportPostResponse, error)
 	GetAllReports(ctx context.Context, in *GetAllReportsRequest, opts ...grpc.CallOption) (*GetAllReportsResponse, error)
+	ResetPosts(ctx context.Context, in *ResetPostsRequest, opts ...grpc.CallOption) (*ResetPostsResponse, error)
 }
 
 type postServiceClient struct {
@@ -132,6 +133,15 @@ func (c *postServiceClient) GetAllReports(ctx context.Context, in *GetAllReports
 	return out, nil
 }
 
+func (c *postServiceClient) ResetPosts(ctx context.Context, in *ResetPostsRequest, opts ...grpc.CallOption) (*ResetPostsResponse, error) {
+	out := new(ResetPostsResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/ResetPosts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostServiceServer is the server API for PostService service.
 // All implementations must embed UnimplementedPostServiceServer
 // for forward compatibility
@@ -146,6 +156,7 @@ type PostServiceServer interface {
 	GetAllPosts(context.Context, *GetAllPostsRequest) (*GetAllPostsResponse, error)
 	ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error)
 	GetAllReports(context.Context, *GetAllReportsRequest) (*GetAllReportsResponse, error)
+	ResetPosts(context.Context, *ResetPostsRequest) (*ResetPostsResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
 
@@ -182,6 +193,9 @@ func (UnimplementedPostServiceServer) ReportPost(context.Context, *ReportPostReq
 }
 func (UnimplementedPostServiceServer) GetAllReports(context.Context, *GetAllReportsRequest) (*GetAllReportsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllReports not implemented")
+}
+func (UnimplementedPostServiceServer) ResetPosts(context.Context, *ResetPostsRequest) (*ResetPostsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetPosts not implemented")
 }
 func (UnimplementedPostServiceServer) mustEmbedUnimplementedPostServiceServer() {}
 
@@ -376,6 +390,24 @@ func _PostService_GetAllReports_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostService_ResetPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).ResetPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/ResetPosts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).ResetPosts(ctx, req.(*ResetPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostService_ServiceDesc is the grpc.ServiceDesc for PostService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -422,6 +454,10 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllReports",
 			Handler:    _PostService_GetAllReports_Handler,
+		},
+		{
+			MethodName: "ResetPosts",
+			Handler:    _PostService_ResetPosts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

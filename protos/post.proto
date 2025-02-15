@@ -10,6 +10,7 @@ service PostService {
    rpc CreatePost (CreatePostRequest) returns (CreatePostResponse) {}
    rpc ChangePost (ChangePostRequest) returns (ChangePostResponse) {}
    rpc DeletePost (DeletePostRequest) returns (DeletePostResponse) {}
+   
    rpc LikePost (LikePostRequest) returns (LikePostResponse) {}
    rpc UnlikePost (UnlikePostRequest) returns (UnlikePostResponse) {}
    rpc GetLikersFromPost (GetLikersFromPostRequest) returns (GetLikersFromPostResponse) {}
@@ -19,6 +20,8 @@ service PostService {
 
    rpc ReportPost (ReportPostRequest) returns (ReportPostResponse) {}
    rpc GetAllReports (GetAllReportsRequest) returns (GetAllReportsResponse) {}
+
+   rpc ResetPosts (ResetPostsRequest) returns (ResetPostsResponse) {} // This grpc method is for developing purposes
 }
 
 message CreatePostRequest {
@@ -99,6 +102,12 @@ message GetAllReportsRequest {}
 
 message GetAllReportsResponse {
    repeated ReportPost report_post = 1;
+}
+
+message ResetPostsRequest {}
+
+message ResetPostsResponse {
+   string result = 1;
 }
 
 message Post {

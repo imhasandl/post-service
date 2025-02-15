@@ -13,7 +13,7 @@ import (
 )
 
 const changePost = `-- name: ChangePost :one
-UPDATE posts SET body = $1
+UPDATE posts SET body = $1, updated_at = NOW()
 WHERE id = $2
 RETURNING id, created_at, updated_at, posted_by, body, likes, views, liked_by
 `
@@ -209,6 +209,15 @@ func (q *Queries) LikePost(ctx context.Context, arg LikePostParams) (Post, error
 		pq.Array(&i.LikedBy),
 	)
 	return i, err
+}
+
+const resetPosts = `-- name: ResetPosts :exec
+TRUNCATE TABLE posts
+`
+
+func (q *Queries) ResetPosts(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, resetPosts)
+	return err
 }
 
 const unlikePost = `-- name: UnlikePost :one

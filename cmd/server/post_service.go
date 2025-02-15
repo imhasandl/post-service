@@ -345,3 +345,14 @@ func (s *server) GetAllReports(ctx context.Context, req *pb.GetAllReportsRequest
 		ReportPost: pbReports,
 	}, nil
 }
+
+func (s *server) ResetPosts(ctx context.Context, req *pb.ResetPostsRequest) (*pb.ResetPostsResponse, error) {
+	err := s.db.ResetPosts(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't reset posts: %v - ResetPosts", err)
+	}
+
+	return &pb.ResetPostsResponse{
+		Result: "All posts deleted successfully",
+	}, nil
+}
