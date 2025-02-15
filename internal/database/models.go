@@ -18,11 +18,12 @@ type Post struct {
 	Body      string
 	Likes     int32
 	Views     int32
+	LikedBy   []string
 }
 
 type Report struct {
 	ID         uuid.UUID
 	ReportedAt time.Time
-	ReportedBy string
+	ReportedBy uuid.UUID
 	Reason     string
 }

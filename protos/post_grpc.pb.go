@@ -23,9 +23,15 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PostServiceClient interface {
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error)
+	ChangePost(ctx context.Context, in *ChangePostRequest, opts ...grpc.CallOption) (*ChangePostResponse, error)
+	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*DeletePostResponse, error)
+	LikePost(ctx context.Context, in *LikePostRequest, opts ...grpc.CallOption) (*LikePostResponse, error)
+	UnlikePost(ctx context.Context, in *UnlikePostRequest, opts ...grpc.CallOption) (*UnlikePostResponse, error)
+	GetLikersFromPost(ctx context.Context, in *GetLikersFromPostRequest, opts ...grpc.CallOption) (*GetLikersFromPostResponse, error)
 	GetPostByID(ctx context.Context, in *GetPostByIDRequest, opts ...grpc.CallOption) (*GetPostByIDResponse, error)
 	GetAllPosts(ctx context.Context, in *GetAllPostsRequest, opts ...grpc.CallOption) (*GetAllPostsResponse, error)
 	ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*ReportPostResponse, error)
+	GetAllReports(ctx context.Context, in *GetAllReportsRequest, opts ...grpc.CallOption) (*GetAllReportsResponse, error)
 }
 
 type postServiceClient struct {
@@ -39,6 +45,51 @@ func NewPostServiceClient(cc grpc.ClientConnInterface) PostServiceClient {
 func (c *postServiceClient) CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error) {
 	out := new(CreatePostResponse)
 	err := c.cc.Invoke(ctx, "/post.PostService/CreatePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) ChangePost(ctx context.Context, in *ChangePostRequest, opts ...grpc.CallOption) (*ChangePostResponse, error) {
+	out := new(ChangePostResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/ChangePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*DeletePostResponse, error) {
+	out := new(DeletePostResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/DeletePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) LikePost(ctx context.Context, in *LikePostRequest, opts ...grpc.CallOption) (*LikePostResponse, error) {
+	out := new(LikePostResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/LikePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) UnlikePost(ctx context.Context, in *UnlikePostRequest, opts ...grpc.CallOption) (*UnlikePostResponse, error) {
+	out := new(UnlikePostResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/UnlikePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postServiceClient) GetLikersFromPost(ctx context.Context, in *GetLikersFromPostRequest, opts ...grpc.CallOption) (*GetLikersFromPostResponse, error) {
+	out := new(GetLikersFromPostResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/GetLikersFromPost", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +123,29 @@ func (c *postServiceClient) ReportPost(ctx context.Context, in *ReportPostReques
 	return out, nil
 }
 
+func (c *postServiceClient) GetAllReports(ctx context.Context, in *GetAllReportsRequest, opts ...grpc.CallOption) (*GetAllReportsResponse, error) {
+	out := new(GetAllReportsResponse)
+	err := c.cc.Invoke(ctx, "/post.PostService/GetAllReports", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostServiceServer is the server API for PostService service.
 // All implementations must embed UnimplementedPostServiceServer
 // for forward compatibility
 type PostServiceServer interface {
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error)
+	ChangePost(context.Context, *ChangePostRequest) (*ChangePostResponse, error)
+	DeletePost(context.Context, *DeletePostRequest) (*DeletePostResponse, error)
+	LikePost(context.Context, *LikePostRequest) (*LikePostResponse, error)
+	UnlikePost(context.Context, *UnlikePostRequest) (*UnlikePostResponse, error)
+	GetLikersFromPost(context.Context, *GetLikersFromPostRequest) (*GetLikersFromPostResponse, error)
 	GetPostByID(context.Context, *GetPostByIDRequest) (*GetPostByIDResponse, error)
 	GetAllPosts(context.Context, *GetAllPostsRequest) (*GetAllPostsResponse, error)
 	ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error)
+	GetAllReports(context.Context, *GetAllReportsRequest) (*GetAllReportsResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
 
@@ -90,6 +156,21 @@ type UnimplementedPostServiceServer struct {
 func (UnimplementedPostServiceServer) CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
 }
+func (UnimplementedPostServiceServer) ChangePost(context.Context, *ChangePostRequest) (*ChangePostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePost not implemented")
+}
+func (UnimplementedPostServiceServer) DeletePost(context.Context, *DeletePostRequest) (*DeletePostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePost not implemented")
+}
+func (UnimplementedPostServiceServer) LikePost(context.Context, *LikePostRequest) (*LikePostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LikePost not implemented")
+}
+func (UnimplementedPostServiceServer) UnlikePost(context.Context, *UnlikePostRequest) (*UnlikePostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnlikePost not implemented")
+}
+func (UnimplementedPostServiceServer) GetLikersFromPost(context.Context, *GetLikersFromPostRequest) (*GetLikersFromPostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLikersFromPost not implemented")
+}
 func (UnimplementedPostServiceServer) GetPostByID(context.Context, *GetPostByIDRequest) (*GetPostByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPostByID not implemented")
 }
@@ -98,6 +179,9 @@ func (UnimplementedPostServiceServer) GetAllPosts(context.Context, *GetAllPostsR
 }
 func (UnimplementedPostServiceServer) ReportPost(context.Context, *ReportPostRequest) (*ReportPostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportPost not implemented")
+}
+func (UnimplementedPostServiceServer) GetAllReports(context.Context, *GetAllReportsRequest) (*GetAllReportsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllReports not implemented")
 }
 func (UnimplementedPostServiceServer) mustEmbedUnimplementedPostServiceServer() {}
 
@@ -126,6 +210,96 @@ func _PostService_CreatePost_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PostServiceServer).CreatePost(ctx, req.(*CreatePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_ChangePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).ChangePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/ChangePost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).ChangePost(ctx, req.(*ChangePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_DeletePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).DeletePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/DeletePost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).DeletePost(ctx, req.(*DeletePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_LikePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LikePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).LikePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/LikePost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).LikePost(ctx, req.(*LikePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_UnlikePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnlikePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).UnlikePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/UnlikePost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).UnlikePost(ctx, req.(*UnlikePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostService_GetLikersFromPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLikersFromPostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).GetLikersFromPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/GetLikersFromPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).GetLikersFromPost(ctx, req.(*GetLikersFromPostRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -184,6 +358,24 @@ func _PostService_ReportPost_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostService_GetAllReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllReportsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostServiceServer).GetAllReports(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/post.PostService/GetAllReports",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostServiceServer).GetAllReports(ctx, req.(*GetAllReportsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostService_ServiceDesc is the grpc.ServiceDesc for PostService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,6 +388,26 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PostService_CreatePost_Handler,
 		},
 		{
+			MethodName: "ChangePost",
+			Handler:    _PostService_ChangePost_Handler,
+		},
+		{
+			MethodName: "DeletePost",
+			Handler:    _PostService_DeletePost_Handler,
+		},
+		{
+			MethodName: "LikePost",
+			Handler:    _PostService_LikePost_Handler,
+		},
+		{
+			MethodName: "UnlikePost",
+			Handler:    _PostService_UnlikePost_Handler,
+		},
+		{
+			MethodName: "GetLikersFromPost",
+			Handler:    _PostService_GetLikersFromPost_Handler,
+		},
+		{
 			MethodName: "GetPostByID",
 			Handler:    _PostService_GetPostByID_Handler,
 		},
@@ -206,6 +418,10 @@ var PostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportPost",
 			Handler:    _PostService_ReportPost_Handler,
+		},
+		{
+			MethodName: "GetAllReports",
+			Handler:    _PostService_GetAllReports_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -6,3 +6,6 @@ VALUES (
    $2,
    $3
 ) RETURNING *;
+
+-- name: GetAllReports :many
+SELECT * FROM reports;

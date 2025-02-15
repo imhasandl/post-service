@@ -8,9 +8,17 @@ option go_package = "github.com/imhasandl/post-service/protos";
 
 service PostService {
    rpc CreatePost (CreatePostRequest) returns (CreatePostResponse) {}
+   rpc ChangePost (ChangePostRequest) returns (ChangePostResponse) {}
+   rpc DeletePost (DeletePostRequest) returns (DeletePostResponse) {}
+   rpc LikePost (LikePostRequest) returns (LikePostResponse) {}
+   rpc UnlikePost (UnlikePostRequest) returns (UnlikePostResponse) {}
+   rpc GetLikersFromPost (GetLikersFromPostRequest) returns (GetLikersFromPostResponse) {}
+
    rpc GetPostByID (GetPostByIDRequest) returns (GetPostByIDResponse) {}
    rpc GetAllPosts (GetAllPostsRequest) returns (GetAllPostsResponse) {}
+
    rpc ReportPost (ReportPostRequest) returns (ReportPostResponse) {}
+   rpc GetAllReports (GetAllReportsRequest) returns (GetAllReportsResponse) {}
 }
 
 message CreatePostRequest {
@@ -19,6 +27,49 @@ message CreatePostRequest {
 
 message CreatePostResponse {
    Post post = 1;
+}
+
+message ChangePostRequest {
+   string id = 1;
+   string body = 2;
+}
+
+message ChangePostResponse {
+   Post post = 1;
+}
+
+message DeletePostRequest {
+   string id = 1;
+}
+
+message DeletePostResponse {
+   string result = 1;
+}
+
+message LikePostRequest {
+   string post_id = 1;
+   string liked_by = 2;
+}
+
+message LikePostResponse {
+   Post post = 1;
+}
+
+message UnlikePostRequest {
+   string post_id = 1;
+   string unliked_by = 2;
+}
+
+message UnlikePostResponse {
+   Post post = 1;
+}
+
+message GetLikersFromPostRequest {
+   string id = 1;
+}
+
+message GetLikersFromPostResponse {
+   repeated string liked_by = 1;
 }
 
 message GetPostByIDRequest {
@@ -37,12 +88,17 @@ message GetAllPostsResponse {
 
 message ReportPostRequest {
    string id = 1;
-   string reported_by = 2;
-   string reason = 3;
+   string reason = 2;
 }
 
 message ReportPostResponse {
    ReportPost report_post = 1;
+}
+
+message GetAllReportsRequest {}
+
+message GetAllReportsResponse {
+   repeated ReportPost report_post = 1;
 }
 
 message Post {
@@ -53,6 +109,7 @@ message Post {
    string body = 5;
    int32 views = 6;
    int32 likes = 7;
+   repeated string liked_by = 8;
 }
 
 message ReportPost {
