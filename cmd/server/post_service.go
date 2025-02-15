@@ -170,11 +170,11 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 }
 
 func (s *server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb.DeletePostResponse, error) {
-	postID, err := uuid.Parse(req.GetId()) 
+	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "can't parse bearer's token to uuid: %v - DeletePost", err)
 	}
-	
+
 	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, "can't get bearer token from header: %v - DeletePost", err)
@@ -205,15 +205,84 @@ func (s *server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb
 }
 
 func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.LikePostResponse, error) {
-	return nil, nil
+	postID, err := uuid.Parse(req.GetPostId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - LikePost", err)
+	}
+
+	likePostParams := database.LikePostParams{
+		ID:          postID,
+		ArrayAppend: req.GetLikedBy(),
+	}
+
+	likedPost, err := s.db.LikePost(ctx, likePostParams)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't like post: %v - LikePost", err)
+	}
+
+	return &pb.LikePostResponse{
+		Post: &pb.Post{
+			Id:        likedPost.ID.String(),
+			CreatedAt: timestamppb.New(likedPost.CreatedAt),
+			UpdatedAt: timestamppb.New(likedPost.UpdatedAt),
+			PostedBy:  likedPost.PostedBy,
+			Body:      likedPost.Body,
+			Likes:     likedPost.Likes,
+			Views:     likedPost.Views,
+			LikedBy:   likedPost.LikedBy,
+		},
+	}, nil
 }
 
 func (s *server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb.UnlikePostResponse, error) {
-	return nil, nil
+	postID, err := uuid.Parse(req.GetPostId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - LikePost", err)
+	}
+
+	likePostParams := database.LikePostParams{
+		ID:          postID,
+		ArrayAppend: req.GetUnlikedBy(),
+	}
+
+	likedPost, err := s.db.LikePost(ctx, likePostParams)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't like post: %v - LikePost", err)
+	}
+
+	return &pb.UnlikePostResponse{
+		Post: &pb.Post{
+			Id:        likedPost.ID.String(),
+			CreatedAt: timestamppb.New(likedPost.CreatedAt),
+			UpdatedAt: timestamppb.New(likedPost.UpdatedAt),
+			PostedBy:  likedPost.PostedBy,
+			Body:      likedPost.Body,
+			Likes:     likedPost.Likes,
+			Views:     likedPost.Views,
+			LikedBy:   likedPost.LikedBy,
+		},
+	}, nil
 }
 
-func (s *server) GetLikers(ctx context.Context, req *pb.UnlikePostRequest) (*pb.UnlikePostResponse, error) {
-	return nil, nil
+func (s *server) GetLikersFromPost(ctx context.Context, req *pb.GetLikersFromPostRequest) (*pb.GetLikersFromPostResponse, error) {
+	postID, err := uuid.Parse(req.GetPostId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - GetLikersFromPost", err)
+	}
+
+	likers, err := s.db.GetLikersFromPost(ctx, postID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get likers from post: %v - GetLikersFromPost", err)
+	}
+
+	likedBy := make([]string, len(likers))
+	for i, liker := range likers {
+		likedBy[i] = liker.(string)
+	}
+
+	return &pb.GetLikersFromPostResponse{
+		LikedBy: likedBy,
+	}, nil
 }
 
 func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb.ReportPostResponse, error) {
@@ -274,5 +343,16 @@ func (s *server) GetAllReports(ctx context.Context, req *pb.GetAllReportsRequest
 
 	return &pb.GetAllReportsResponse{
 		ReportPost: pbReports,
+	}, nil
+}
+
+func (s *server) ResetPosts(ctx context.Context, req *pb.ResetPostsRequest) (*pb.ResetPostsResponse, error) {
+	err := s.db.ResetPosts(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't reset posts: %v - ResetPosts", err)
+	}
+
+	return &pb.ResetPostsResponse{
+		Result: "All posts deleted successfully",
 	}, nil
 }

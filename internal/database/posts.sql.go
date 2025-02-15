@@ -13,7 +13,7 @@ import (
 )
 
 const changePost = `-- name: ChangePost :one
-UPDATE posts SET body = $1
+UPDATE posts SET body = $1, updated_at = NOW()
 WHERE id = $2
 RETURNING id, created_at, updated_at, posted_by, body, likes, views, liked_by
 `
@@ -130,14 +130,14 @@ func (q *Queries) GetAllPosts(ctx context.Context) ([]Post, error) {
 	return items, nil
 }
 
-const getLikers = `-- name: GetLikers :many
+const getLikersFromPost = `-- name: GetLikersFromPost :many
 SELECT unnest(liked_by) AS liker_id
 FROM posts
 WHERE id = $1
 `
 
-func (q *Queries) GetLikers(ctx context.Context, id uuid.UUID) ([]interface{}, error) {
-	rows, err := q.db.QueryContext(ctx, getLikers, id)
+func (q *Queries) GetLikersFromPost(ctx context.Context, id uuid.UUID) ([]interface{}, error) {
+	rows, err := q.db.QueryContext(ctx, getLikersFromPost, id)
 	if err != nil {
 		return nil, err
 	}
@@ -209,6 +209,15 @@ func (q *Queries) LikePost(ctx context.Context, arg LikePostParams) (Post, error
 		pq.Array(&i.LikedBy),
 	)
 	return i, err
+}
+
+const resetPosts = `-- name: ResetPosts :exec
+TRUNCATE TABLE posts
+`
+
+func (q *Queries) ResetPosts(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, resetPosts)
+	return err
 }
 
 const unlikePost = `-- name: UnlikePost :one
