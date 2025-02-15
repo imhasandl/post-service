@@ -43,7 +43,7 @@ WHERE id = $1
   AND $2 = ANY(liked_by)
 RETURNING *;
 
--- name: GetLikers :many
+-- name: GetLikersFromPost :many
 SELECT unnest(liked_by) AS liker_id
 FROM posts
 WHERE id = $1;

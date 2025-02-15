@@ -65,7 +65,7 @@ message UnlikePostResponse {
 }
 
 message GetLikersFromPostRequest {
-   string id = 1;
+   string post_id = 1;
 }
 
 message GetLikersFromPostResponse {

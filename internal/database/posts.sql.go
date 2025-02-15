@@ -130,14 +130,14 @@ func (q *Queries) GetAllPosts(ctx context.Context) ([]Post, error) {
 	return items, nil
 }
 
-const getLikers = `-- name: GetLikers :many
+const getLikersFromPost = `-- name: GetLikersFromPost :many
 SELECT unnest(liked_by) AS liker_id
 FROM posts
 WHERE id = $1
 `
 
-func (q *Queries) GetLikers(ctx context.Context, id uuid.UUID) ([]interface{}, error) {
-	rows, err := q.db.QueryContext(ctx, getLikers, id)
+func (q *Queries) GetLikersFromPost(ctx context.Context, id uuid.UUID) ([]interface{}, error) {
+	rows, err := q.db.QueryContext(ctx, getLikersFromPost, id)
 	if err != nil {
 		return nil, err
 	}
