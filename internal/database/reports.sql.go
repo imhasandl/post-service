@@ -11,6 +11,38 @@ import (
 	"github.com/google/uuid"
 )
 
+const getAllReports = `-- name: GetAllReports :many
+SELECT id, reported_at, reported_by, reason FROM reports
+`
+
+func (q *Queries) GetAllReports(ctx context.Context) ([]Report, error) {
+	rows, err := q.db.QueryContext(ctx, getAllReports)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Report
+	for rows.Next() {
+		var i Report
+		if err := rows.Scan(
+			&i.ID,
+			&i.ReportedAt,
+			&i.ReportedBy,
+			&i.Reason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const reportPost = `-- name: ReportPost :one
 INSERT INTO reports (id, reported_at, reported_by, reason)
 VALUES (
@@ -23,7 +55,7 @@ VALUES (
 
 type ReportPostParams struct {
 	ID         uuid.UUID
-	ReportedBy string
+	ReportedBy uuid.UUID
 	Reason     string
 }
 

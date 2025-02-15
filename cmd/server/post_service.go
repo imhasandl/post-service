@@ -118,16 +118,123 @@ func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
 	}, nil
 }
 
+func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb.ChangePostResponse, error) {
+	postID, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "can't parse post id: %v - ChangePost", err)
+	}
+
+	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "can't get bearer token: %v - ChangePost", err)
+	}
+
+	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid token: %v - ChangePost", err)
+	}
+
+	post, err := s.db.GetPostByID(ctx, postID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get post by id: %v - ChangePost", err)
+	}
+
+	if post.PostedBy != userID.String() {
+		return nil, status.Errorf(codes.PermissionDenied, "you are not allowed to change this post: %v - ChangePost", err)
+	}
+
+	changedPostParams := database.ChangePostParams{
+		Body: req.GetBody(),
+		ID:   post.ID,
+	}
+
+	changedPost, err := s.db.ChangePost(ctx, changedPostParams)
+	if err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "can't change post: %v - ChangePost", err)
+	}
+
+	createdAtProto := timestamppb.New(changedPost.CreatedAt)
+	updatedAtProto := timestamppb.New(changedPost.UpdatedAt)
+
+	return &pb.ChangePostResponse{
+		Post: &pb.Post{
+			Id:        changedPost.ID.String(),
+			CreatedAt: createdAtProto,
+			UpdatedAt: updatedAtProto,
+			PostedBy:  changedPost.PostedBy,
+			Body:      changedPost.Body,
+			Views:     changedPost.Views,
+			Likes:     changedPost.Likes,
+		},
+	}, nil
+}
+
+func (s *server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb.DeletePostResponse, error) {
+	postID, err := uuid.Parse(req.GetId()) 
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't parse bearer's token to uuid: %v - DeletePost", err)
+	}
+	
+	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "can't get bearer token from header: %v - DeletePost", err)
+	}
+
+	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "can't validate provided token: %v - DeletePost", err)
+	}
+
+	post, err := s.db.GetPostByID(ctx, postID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get post using id: %v - DeletePost", err)
+	}
+
+	if post.ID != userID {
+		return nil, status.Errorf(codes.PermissionDenied, "you are not allowed to change this post: %v - DeletePost", err)
+	}
+
+	_, err = s.db.DeletePost(ctx, postID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't delete post: %v - DeletePost", err)
+	}
+
+	return &pb.DeletePostResponse{
+		Result: "Deleted successfully",
+	}, nil
+}
+
+func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.LikePostResponse, error) {
+	return nil, nil
+}
+
+func (s *server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb.UnlikePostResponse, error) {
+	return nil, nil
+}
+
+func (s *server) GetLikers(ctx context.Context, req *pb.UnlikePostRequest) (*pb.UnlikePostResponse, error) {
+	return nil, nil
+}
+
 func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb.ReportPostResponse, error) {
 	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't report post: %v - ReportPost", err)
+		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - ReportPost", err)
+	}
+
+	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - ReportPost", err)
+	}
+
+	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get user id from token: %v - ReportPost", err)
 	}
 
 	reportParams := database.ReportPostParams{
-		ID:         postID,
-		ReportedBy: req.GetReportedBy(),
-		Reason:     req.GetReason(),
+		ID:     postID,
+		Reason: req.GetReason(),
 	}
 
 	report, err := s.db.ReportPost(ctx, reportParams)
@@ -141,8 +248,31 @@ func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb
 		ReportPost: &pb.ReportPost{
 			Id:         report.ID.String(),
 			ReportedAt: reportedAt,
-			ReportedBy: report.ReportedBy,
+			ReportedBy: userID.String(),
 			Reason:     report.Reason,
 		},
+	}, nil
+}
+
+func (s *server) GetAllReports(ctx context.Context, req *pb.GetAllReportsRequest) (*pb.GetAllReportsResponse, error) {
+	reports, err := s.db.GetAllReports(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get reports from db: %v - GetAllReports", err)
+	}
+
+	pbReports := make([]*pb.ReportPost, len(reports))
+	for i, report := range reports {
+		reportedAt := timestamppb.New(report.ReportedAt)
+
+		pbReports[i] = &pb.ReportPost{
+			Id:         report.ID.String(),
+			ReportedAt: reportedAt,
+			ReportedBy: report.ReportedBy.String(),
+			Reason:     report.Reason,
+		}
+	}
+
+	return &pb.GetAllReportsResponse{
+		ReportPost: pbReports,
 	}, nil
 }
