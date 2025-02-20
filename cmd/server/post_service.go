@@ -48,14 +48,11 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, status.Errorf(codes.Internal, "can't create post to database: %v - CreatePost", err)
 	}
 
-	createdAtProto := timestamppb.New(post.CreatedAt)
-	updatedAtProto := timestamppb.New(post.UpdatedAt)
-
 	return &pb.CreatePostResponse{
 		Post: &pb.Post{
 			Id:        post.ID.String(),
-			CreatedAt: createdAtProto,
-			UpdatedAt: updatedAtProto,
+			CreatedAt: timestamppb.New(post.CreatedAt),
+			UpdatedAt: timestamppb.New(post.UpdatedAt),
 			PostedBy:  post.PostedBy,
 			Body:      post.Body,
 			Likes:     post.Likes,
@@ -72,13 +69,10 @@ func (s *server) GetAllPosts(ctx context.Context, req *pb.GetAllPostsRequest) (*
 
 	pbPosts := make([]*pb.Post, len(posts))
 	for i, post := range posts {
-		createdAtProto := timestamppb.New(post.CreatedAt)
-		updatedAtProto := timestamppb.New(post.UpdatedAt)
-
 		pbPosts[i] = &pb.Post{
 			Id:        post.ID.String(),
-			CreatedAt: createdAtProto,
-			UpdatedAt: updatedAtProto,
+			CreatedAt: timestamppb.New(post.CreatedAt),
+			UpdatedAt: timestamppb.New(post.UpdatedAt),
 			PostedBy:  post.PostedBy,
 			Body:      post.Body,
 			Likes:     post.Likes,

@@ -1,13 +1,24 @@
-FROM golang:1.23.5-alpine
+# Build stage
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
+COPY go.mod go.sum ./
+
+RUN go mod download
+
 COPY . .
 
-RUN go build -o out && ./out
+RUN go build -o out && ./out  # Build the executable as 'out'
 
-EXPOSE 50051
+# Final stage
+FROM alpine:latest
 
-CMD ["./auth-service"]
+WORKDIR /app
 
-# docker build -t post-service:latest .
+COPY --from=builder /app/out /app/out  
+COPY .env .env
+
+EXPOSE 50052
+
+CMD ["./out"]  # Run the 'out' executable
