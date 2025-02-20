@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 
 	server "github.com/imhasandl/post-service/cmd/server"
 	"github.com/imhasandl/post-service/internal/database"
@@ -17,8 +18,8 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(filepath.Join("./", ".env")); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	port := os.Getenv("PORT")
