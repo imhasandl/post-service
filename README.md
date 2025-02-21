@@ -1,3 +1,5 @@
+[![CI](https://github.com/imhasandl/post-service/actions/workflows/ci.yml/badge.svg)](https://github.com/imhasandl/post-service/actions/workflows/ci.yml)
+
 # Post Service
 
 This service handles the creation, retrieval, updating, and deletion of posts for a social media platform.  It uses gRPC for communication.
