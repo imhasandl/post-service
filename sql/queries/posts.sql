@@ -28,8 +28,7 @@ DELETE FROM posts WHERE id = $1 RETURNING *;
 -- name: LikePost :one
 UPDATE posts
 SET likes = likes + 1,
-    liked_by = array_append(liked_by, $2),
-    updated_at = NOW()
+    liked_by = array_append(liked_by, $2)
 WHERE id = $1
   AND NOT $2 = ANY(liked_by)
 RETURNING *;
@@ -37,8 +36,7 @@ RETURNING *;
 -- name: UnlikePost :one
 UPDATE posts
 SET likes = likes - 1,
-    liked_by = array_remove(liked_by, $2),
-    updated_at = NOW()
+    liked_by = array_remove(liked_by, $2)
 WHERE id = $1
   AND $2 = ANY(liked_by)
 RETURNING *;
@@ -46,6 +44,11 @@ RETURNING *;
 -- name: GetLikersFromPost :many
 SELECT unnest(liked_by) AS liker_id
 FROM posts
+WHERE id = $1;
+
+-- name: IncrementPostViews :exec
+UPDATE posts
+SET views = views + 1
 WHERE id = $1;
 
 -- name: ResetPosts :exec
