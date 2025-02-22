@@ -96,14 +96,16 @@ func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
 		return nil, status.Errorf(codes.Internal, "can't get post from db: %v - GetPostByID", err)
 	}
 
-	createdAtProto := timestamppb.New(post.CreatedAt)
-	updatedAtProto := timestamppb.New(post.UpdatedAt)
+	err = s.db.IncrementPostViews(ctx, post.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't increment post views: %v - GetPost", err)
+	}
 
 	return &pb.GetPostByIDResponse{
 		Post: &pb.Post{
 			Id:        post.ID.String(),
-			CreatedAt: createdAtProto,
-			UpdatedAt: updatedAtProto,
+			CreatedAt: timestamppb.New(post.CreatedAt),
+			UpdatedAt: timestamppb.New(post.UpdatedAt),
 			PostedBy:  post.PostedBy,
 			Body:      post.Body,
 			Views:     post.Views,
@@ -279,6 +281,80 @@ func (s *server) GetLikersFromPost(ctx context.Context, req *pb.GetLikersFromPos
 	}, nil
 }
 
+func (s *server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest) (*pb.CreateCommentResponse, error) {
+	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - CreateComment", err)
+	}
+
+	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "can't get user id from token: %v - CreateComment", err)
+	}
+
+	postID, err := uuid.Parse(req.GetPostId())
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "can't parse post id: %v - CreateComment", err)
+	} 
+
+	createCommentParams := database.CreateCommentParams{
+		ID: uuid.New(),
+		PostID: postID,
+		UserID: userID,
+		CommentText: req.GetCommentText(),
+	}
+
+	comment, err := s.db.CreateComment(ctx, createCommentParams)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't create comment: %v - CreateComment", err)
+	}
+
+	return &pb.CreateCommentResponse{
+		Comment: &pb.Comment{
+			Id: comment.ID.String(),
+			CreatedAt: timestamppb.New(comment.CreatedAt),
+			PostId: comment.PostID.String(),
+			UserId: comment.UserID.String(),		
+			CommentText: comment.CommentText,	
+		},
+	}, nil
+}
+
+func (s *server) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest) (*pb.DeleteCommentResponse, error) {
+	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - DeleteComment", err)
+	}
+
+	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "can't get user id from token: %v - CreateComment", err)
+	}
+
+	commentID, err := uuid.Parse(req.GetId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't parse comment id: %v - DeleteComment", err)
+	}
+
+	commentParams, err := s.db.GetCommentByID(ctx, commentID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't get comment by id: %v - DeleteComment", err)
+	}
+
+	if commentParams.UserID != userID {
+		return nil, status.Errorf(codes.PermissionDenied, "you are not allowed to delete this comment: %v - DeleteComment", err)
+	}
+
+	err = s.db.DeleteComment(ctx, commentParams.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "can't delete comment: %v - DeleteComment", err)
+	}
+
+	return &pb.DeleteCommentResponse{
+		Status: "comment deleted successfully",
+	}, nil
+}
+
 func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb.ReportPostResponse, error) {
 	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
@@ -347,6 +423,6 @@ func (s *server) ResetPosts(ctx context.Context, req *pb.ResetPostsRequest) (*pb
 	}
 
 	return &pb.ResetPostsResponse{
-		Result: "All posts deleted successfully",
+		Status: "All posts deleted successfully",
 	}, nil
 }

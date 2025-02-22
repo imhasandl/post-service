@@ -21,6 +21,9 @@ service PostService {
    rpc ReportPost (ReportPostRequest) returns (ReportPostResponse) {}
    rpc GetAllReports (GetAllReportsRequest) returns (GetAllReportsResponse) {}
 
+   rpc CreateComment (CreateCommentRequest) returns (CreateCommentResponse) {}
+   rpc DeleteComment (DeleteCommentRequest) returns (DeleteCommentResponse) {}
+
    rpc ResetPosts (ResetPostsRequest) returns (ResetPostsResponse) {} // This grpc method is for developing purposes
 }
 
@@ -104,10 +107,27 @@ message GetAllReportsResponse {
    repeated ReportPost report_post = 1;
 }
 
+message CreateCommentRequest {
+   string post_id = 1;
+   string comment_text = 2;
+}
+
+message CreateCommentResponse {
+   Comment comment = 1;
+}
+
+message DeleteCommentRequest {
+   string id = 1;
+}  
+
+message DeleteCommentResponse {
+  string status = 1;
+}
+
 message ResetPostsRequest {}
 
 message ResetPostsResponse {
-   string result = 1;
+  string status = 1;
 }
 
 message Post {
@@ -126,6 +146,14 @@ message ReportPost {
    google.protobuf.Timestamp reported_at = 2;
    string reported_by = 3;
    string reason = 4;
+}
+
+message Comment {
+   string id = 1;
+   google.protobuf.Timestamp created_at = 2;
+   string post_id = 3;
+   string user_id = 4;
+   string comment_text = 5;
 }
 
 // protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative post.proto
