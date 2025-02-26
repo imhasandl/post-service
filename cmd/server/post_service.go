@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/imhasandl/post-service/cmd/auth"
 	"github.com/imhasandl/post-service/cmd/helper"
 	"github.com/imhasandl/post-service/internal/database"
 	pb "github.com/imhasandl/post-service/protos"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -27,14 +27,14 @@ func NewServer(db *database.Queries, tokenSecret string) *server {
 }
 
 func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb.CreatePostResponse, error) {
-	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	accessToken, err := auth.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - CreatePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: CreatePost", err)
 	}
 
 	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get user id from token: %v - CreatePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get user id from token: CreatePost", err)
 	}
 
 	postParams := database.CreatePostParams{
@@ -45,7 +45,7 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 
 	post, err := s.db.CreatePost(ctx, postParams)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't create post to database: %v - CreatePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't create post to database: CreatePost", err)
 	}
 
 	return &pb.CreatePostResponse{
@@ -64,7 +64,7 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 func (s *server) GetAllPosts(ctx context.Context, req *pb.GetAllPostsRequest) (*pb.GetAllPostsResponse, error) {
 	posts, err := s.db.GetAllPosts(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get all posts from db: %v - GetAllPosts", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get all posts from db: GetAllPosts", err)
 	}
 
 	pbPosts := make([]*pb.Post, len(posts))
@@ -88,17 +88,17 @@ func (s *server) GetAllPosts(ctx context.Context, req *pb.GetAllPostsRequest) (*
 func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.GetPostByIDResponse, error) {
 	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse id from request: %v - GetPostByID", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse id from request: GetPostByID", err)
 	}
 
 	post, err := s.db.GetPostByID(ctx, postID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get post from db: %v - GetPostByID", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get post from db: GetPostByID", err)
 	}
 
 	err = s.db.IncrementPostViews(ctx, post.ID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't increment post views: %v - GetPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't increment post views: GetPost", err)
 	}
 
 	return &pb.GetPostByIDResponse{
@@ -117,26 +117,26 @@ func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
 func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb.ChangePostResponse, error) {
 	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "can't parse post id: %v - ChangePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.InvalidArgument, "can't parse post id: ChangePost", err)
 	}
 
-	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	accessToken, err := auth.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "can't get bearer token: %v - ChangePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't get bearer token: ChangePost", err)
 	}
 
 	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid token: %v - ChangePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "invalid token: ChangePost", err)
 	}
 
 	post, err := s.db.GetPostByID(ctx, postID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get post by id: %v - ChangePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get post by id: ChangePost", err)
 	}
 
 	if post.PostedBy != userID.String() {
-		return nil, status.Errorf(codes.PermissionDenied, "you are not allowed to change this post: %v - ChangePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "you are not allowed to change this post: ChangePost", err)
 	}
 
 	changedPostParams := database.ChangePostParams{
@@ -146,7 +146,7 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 
 	changedPost, err := s.db.ChangePost(ctx, changedPostParams)
 	if err != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "can't change post: %v - ChangePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "can't change post: ChangePost", err)
 	}
 
 	createdAtProto := timestamppb.New(changedPost.CreatedAt)
@@ -168,31 +168,31 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 func (s *server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb.DeletePostResponse, error) {
 	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse bearer's token to uuid: %v - DeletePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse bearer's token to uuid: DeletePost", err)
 	}
 
-	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	accessToken, err := auth.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "can't get bearer token from header: %v - DeletePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "can't get bearer token from header: DeletePost", err)
 	}
 
 	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "can't validate provided token: %v - DeletePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "can't validate provided token: DeletePost", err)
 	}
 
 	post, err := s.db.GetPostByID(ctx, postID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get post using id: %v - DeletePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get post using id: DeletePost", err)
 	}
 
 	if post.ID != userID {
-		return nil, status.Errorf(codes.PermissionDenied, "you are not allowed to change this post: %v - DeletePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "you are not allowed to change this post: DeletePost", err)
 	}
 
 	_, err = s.db.DeletePost(ctx, postID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't delete post: %v - DeletePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't delete post: DeletePost", err)
 	}
 
 	return &pb.DeletePostResponse{
@@ -203,7 +203,7 @@ func (s *server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb
 func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.LikePostResponse, error) {
 	postID, err := uuid.Parse(req.GetPostId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - LikePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse post id: LikePost", err)
 	}
 
 	likePostParams := database.LikePostParams{
@@ -213,7 +213,7 @@ func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.Lik
 
 	likedPost, err := s.db.LikePost(ctx, likePostParams)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't like post: %v - LikePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't like post: LikePost", err)
 	}
 
 	return &pb.LikePostResponse{
@@ -233,7 +233,7 @@ func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.Lik
 func (s *server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb.UnlikePostResponse, error) {
 	postID, err := uuid.Parse(req.GetPostId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - LikePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse post id: UnlikePost", err)
 	}
 
 	likePostParams := database.LikePostParams{
@@ -243,7 +243,7 @@ func (s *server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb
 
 	likedPost, err := s.db.LikePost(ctx, likePostParams)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't like post: %v - LikePost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't like post: UnlikePost", err)
 	}
 
 	return &pb.UnlikePostResponse{
@@ -263,12 +263,12 @@ func (s *server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb
 func (s *server) GetLikersFromPost(ctx context.Context, req *pb.GetLikersFromPostRequest) (*pb.GetLikersFromPostResponse, error) {
 	postID, err := uuid.Parse(req.GetPostId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - GetLikersFromPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse post id: GetLikersFromPost", err)
 	}
 
 	likers, err := s.db.GetLikersFromPost(ctx, postID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get likers from post: %v - GetLikersFromPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get likers from post: GetLikersFromPost", err)
 	}
 
 	likedBy := make([]string, len(likers))
@@ -282,72 +282,72 @@ func (s *server) GetLikersFromPost(ctx context.Context, req *pb.GetLikersFromPos
 }
 
 func (s *server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest) (*pb.CreateCommentResponse, error) {
-	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	accessToken, err := auth.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - CreateComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: CreateComment", err)
 	}
 
 	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "can't get user id from token: %v - CreateComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't get user id from token: CreateComment", err)
 	}
 
 	postID, err := uuid.Parse(req.GetPostId())
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "can't parse post id: %v - CreateComment", err)
-	} 
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't parse post id: CreateComment", err)
+	}
 
 	createCommentParams := database.CreateCommentParams{
-		ID: uuid.New(),
-		PostID: postID,
-		UserID: userID,
+		ID:          uuid.New(),
+		PostID:      postID,
+		UserID:      userID,
 		CommentText: req.GetCommentText(),
 	}
 
 	comment, err := s.db.CreateComment(ctx, createCommentParams)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't create comment: %v - CreateComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't create comment: CreateComment", err)
 	}
 
 	return &pb.CreateCommentResponse{
 		Comment: &pb.Comment{
-			Id: comment.ID.String(),
-			CreatedAt: timestamppb.New(comment.CreatedAt),
-			PostId: comment.PostID.String(),
-			UserId: comment.UserID.String(),		
-			CommentText: comment.CommentText,	
+			Id:          comment.ID.String(),
+			CreatedAt:   timestamppb.New(comment.CreatedAt),
+			PostId:      comment.PostID.String(),
+			UserId:      comment.UserID.String(),
+			CommentText: comment.CommentText,
 		},
 	}, nil
 }
 
 func (s *server) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest) (*pb.DeleteCommentResponse, error) {
-	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	accessToken, err := auth.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - DeleteComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: DeleteComment", err)
 	}
 
 	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "can't get user id from token: %v - CreateComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't get user id from token: DeleteComment", err)
 	}
 
 	commentID, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse comment id: %v - DeleteComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse comment id: DeleteComment", err)
 	}
 
 	commentParams, err := s.db.GetCommentByID(ctx, commentID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get comment by id: %v - DeleteComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get comment by id: DeleteComment", err)
 	}
 
 	if commentParams.UserID != userID {
-		return nil, status.Errorf(codes.PermissionDenied, "you are not allowed to delete this comment: %v - DeleteComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "you are not allowed to delete this comment: DeleteComment", err)
 	}
 
 	err = s.db.DeleteComment(ctx, commentParams.ID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't delete comment: %v - DeleteComment", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't delete comment: DeleteComment", err)
 	}
 
 	return &pb.DeleteCommentResponse{
@@ -358,17 +358,17 @@ func (s *server) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest
 func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb.ReportPostResponse, error) {
 	postID, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't parse post id: %v - ReportPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse post id: ReportPost", err)
 	}
 
-	accessToken, err := helper.GetBearerTokenFromGrpc(ctx)
+	accessToken, err := auth.GetBearerTokenFromGrpc(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get bearer token: %v - ReportPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: ReportPost", err)
 	}
 
 	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get user id from token: %v - ReportPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get user id from token: ReportPost", err)
 	}
 
 	reportParams := database.ReportPostParams{
@@ -378,7 +378,7 @@ func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb
 
 	report, err := s.db.ReportPost(ctx, reportParams)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't report post to db: %v - ReportPost", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't report post to db: ReportPost", err)
 	}
 
 	reportedAt := timestamppb.New(report.ReportedAt)
@@ -396,7 +396,7 @@ func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb
 func (s *server) GetAllReports(ctx context.Context, req *pb.GetAllReportsRequest) (*pb.GetAllReportsResponse, error) {
 	reports, err := s.db.GetAllReports(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't get reports from db: %v - GetAllReports", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get reports from db: GetAllReports", err)
 	}
 
 	pbReports := make([]*pb.ReportPost, len(reports))
@@ -419,7 +419,7 @@ func (s *server) GetAllReports(ctx context.Context, req *pb.GetAllReportsRequest
 func (s *server) ResetPosts(ctx context.Context, req *pb.ResetPostsRequest) (*pb.ResetPostsResponse, error) {
 	err := s.db.ResetPosts(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't reset posts: %v - ResetPosts", err)
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't reset posts: ResetPosts", err)
 	}
 
 	return &pb.ResetPostsResponse{
