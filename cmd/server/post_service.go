@@ -32,7 +32,7 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: CreatePost", err)
 	}
 
-	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	userID, err := auth.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get user id from token: CreatePost", err)
 	}
@@ -125,7 +125,7 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't get bearer token: ChangePost", err)
 	}
 
-	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	userID, err := auth.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "invalid token: ChangePost", err)
 	}
@@ -176,7 +176,7 @@ func (s *server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "can't get bearer token from header: DeletePost", err)
 	}
 
-	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	userID, err := auth.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "can't validate provided token: DeletePost", err)
 	}
@@ -287,7 +287,7 @@ func (s *server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: CreateComment", err)
 	}
 
-	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	userID, err := auth.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't get user id from token: CreateComment", err)
 	}
@@ -326,7 +326,7 @@ func (s *server) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: DeleteComment", err)
 	}
 
-	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	userID, err := auth.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't get user id from token: DeleteComment", err)
 	}
@@ -366,7 +366,7 @@ func (s *server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get bearer token: ReportPost", err)
 	}
 
-	userID, err := helper.ValidateJWT(accessToken, s.tokenSecret)
+	userID, err := auth.ValidateJWT(accessToken, s.tokenSecret)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get user id from token: ReportPost", err)
 	}
