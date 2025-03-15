@@ -2,12 +2,15 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/imhasandl/post-service/cmd/auth"
 	"github.com/imhasandl/post-service/cmd/helper"
 	"github.com/imhasandl/post-service/internal/database"
+	"github.com/imhasandl/post-service/internal/rabbitmq"
 	pb "github.com/imhasandl/post-service/protos"
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -16,13 +19,15 @@ type server struct {
 	pb.UnimplementedPostServiceServer
 	db          *database.Queries
 	tokenSecret string
+	rabbitmq    *rabbitmq.RabbitMQ
 }
 
-func NewServer(db *database.Queries, tokenSecret string) *server {
+func NewServer(db *database.Queries, tokenSecret string, rabbitmq *rabbitmq.RabbitMQ) *server {
 	return &server{
 		pb.UnimplementedPostServiceServer{},
 		db,
 		tokenSecret,
+		rabbitmq,
 	}
 }
 
@@ -39,7 +44,7 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 
 	postParams := database.CreatePostParams{
 		ID:       uuid.New(),
-		PostedBy: userID.String(),
+		PostedBy: userID,
 		Body:     req.GetBody(),
 	}
 
@@ -53,7 +58,7 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 			Id:        post.ID.String(),
 			CreatedAt: timestamppb.New(post.CreatedAt),
 			UpdatedAt: timestamppb.New(post.UpdatedAt),
-			PostedBy:  post.PostedBy,
+			PostedBy:  post.PostedBy.String(),
 			Body:      post.Body,
 			Likes:     post.Likes,
 			Views:     post.Views,
@@ -73,7 +78,7 @@ func (s *server) GetAllPosts(ctx context.Context, req *pb.GetAllPostsRequest) (*
 			Id:        post.ID.String(),
 			CreatedAt: timestamppb.New(post.CreatedAt),
 			UpdatedAt: timestamppb.New(post.UpdatedAt),
-			PostedBy:  post.PostedBy,
+			PostedBy:  post.PostedBy.String(),
 			Body:      post.Body,
 			Likes:     post.Likes,
 			Views:     post.Views,
@@ -106,7 +111,7 @@ func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
 			Id:        post.ID.String(),
 			CreatedAt: timestamppb.New(post.CreatedAt),
 			UpdatedAt: timestamppb.New(post.UpdatedAt),
-			PostedBy:  post.PostedBy,
+			PostedBy:  post.PostedBy.String(),
 			Body:      post.Body,
 			Views:     post.Views,
 			Likes:     post.Likes,
@@ -135,7 +140,7 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get post by id: ChangePost", err)
 	}
 
-	if post.PostedBy != userID.String() {
+	if post.PostedBy != userID {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "you are not allowed to change this post: ChangePost", err)
 	}
 
@@ -157,7 +162,7 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 			Id:        changedPost.ID.String(),
 			CreatedAt: createdAtProto,
 			UpdatedAt: updatedAtProto,
-			PostedBy:  changedPost.PostedBy,
+			PostedBy:  changedPost.PostedBy.String(),
 			Body:      changedPost.Body,
 			Views:     changedPost.Views,
 			Likes:     changedPost.Likes,
@@ -211,21 +216,21 @@ func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.Lik
 		ArrayAppend: req.GetLikedBy(),
 	}
 
-	likedPost, err := s.db.LikePost(ctx, likePostParams)
+	post, err := s.db.LikePost(ctx, likePostParams)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't like post: LikePost", err)
 	}
 
 	return &pb.LikePostResponse{
 		Post: &pb.Post{
-			Id:        likedPost.ID.String(),
-			CreatedAt: timestamppb.New(likedPost.CreatedAt),
-			UpdatedAt: timestamppb.New(likedPost.UpdatedAt),
-			PostedBy:  likedPost.PostedBy,
-			Body:      likedPost.Body,
-			Likes:     likedPost.Likes,
-			Views:     likedPost.Views,
-			LikedBy:   likedPost.LikedBy,
+			Id:        post.ID.String(),
+			CreatedAt: timestamppb.New(post.CreatedAt),
+			UpdatedAt: timestamppb.New(post.UpdatedAt),
+			PostedBy:  post.PostedBy.String(),
+			Body:      post.Body,
+			Likes:     post.Likes,
+			Views:     post.Views,
+			LikedBy:   post.LikedBy,
 		},
 	}, nil
 }
@@ -251,7 +256,7 @@ func (s *server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb
 			Id:        likedPost.ID.String(),
 			CreatedAt: timestamppb.New(likedPost.CreatedAt),
 			UpdatedAt: timestamppb.New(likedPost.UpdatedAt),
-			PostedBy:  likedPost.PostedBy,
+			PostedBy:  likedPost.PostedBy.String(),
 			Body:      likedPost.Body,
 			Likes:     likedPost.Likes,
 			Views:     likedPost.Views,
@@ -297,6 +302,11 @@ func (s *server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Unauthenticated, "can't parse post id: CreateComment", err)
 	}
 
+	post, err := s.db.GetPostByID(ctx, postID)
+	if err != nil {
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get post from db using it's id - CreateComment", err)
+	}
+
 	createCommentParams := database.CreateCommentParams{
 		ID:          uuid.New(),
 		PostID:      postID,
@@ -307,6 +317,32 @@ func (s *server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest
 	comment, err := s.db.CreateComment(ctx, createCommentParams)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't create comment: CreateComment", err)
+	}
+
+	// Create JSON message
+	messageJSON, err := json.Marshal(map[string]interface{}{
+		"title":           "New comment on your post",
+		"sender_username": userID,
+		"receiver_id":     post.PostedBy,
+		"content":         req.GetCommentText(),
+		"sent_at":         comment.CreatedAt,
+	})
+	if err != nil {
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't marshal message to JSON - SendMessage", err)
+	}
+
+	// Publish message to RabbitMQ
+	err = s.rabbitmq.Channel.Publish(
+		rabbitmq.ExchangeName, // exchange
+		rabbitmq.RoutingKey,   // routing key
+		false,                 // mandatory
+		false,                 // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        messageJSON,
+		})
+	if err != nil {
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't publish message to RabbitMQ - SendMessage", err)
 	}
 
 	return &pb.CreateCommentResponse{

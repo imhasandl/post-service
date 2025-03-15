@@ -9,6 +9,7 @@ import (
 
 	server "github.com/imhasandl/post-service/cmd/server"
 	"github.com/imhasandl/post-service/internal/database"
+	"github.com/imhasandl/post-service/internal/rabbitmq"
 	pb "github.com/imhasandl/post-service/protos"
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
@@ -37,6 +38,11 @@ func main() {
 		log.Fatalf("Set db connection in env")
 	}
 
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
+	if rabbitmqURL == "" {
+		log.Fatalf("Set rabbit mq url path")
+	}
+
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listed: %v", err)
@@ -49,7 +55,13 @@ func main() {
 	defer dbConn.Close()
 	dbQueries := database.New(dbConn)
 
-	postServer := server.NewServer(dbQueries, tokenSecret)
+	rebbitmq, err := rabbitmq.NewRabbitMQ(rabbitmqURL)
+	if err != nil {
+		log.Fatalf("Error connecting to rabbit mq: %v", err)
+	}
+	defer rebbitmq.Close()
+
+	postServer := server.NewServer(dbQueries, tokenSecret, rebbitmq)
 
 	s := grpc.NewServer()
 	pb.RegisterPostServiceServer(s, postServer)

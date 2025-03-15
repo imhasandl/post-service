@@ -9,6 +9,7 @@ import (
 const (
 	ExchangeName = "notifications.topic"
 	QueueName    = "notification_service_queue"
+	RoutingKey   = "message-service.notification"
 )
 
 type RabbitMQ struct {
