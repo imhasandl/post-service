@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/imhasandl/post-service/cmd/auth"
@@ -219,6 +220,30 @@ func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.Lik
 	post, err := s.db.LikePost(ctx, likePostParams)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't like post: LikePost", err)
+	}
+	messageJSON, err := json.Marshal(map[string]string{
+		"title":           "New Notification",
+		"sender_username": req.LikedBy,
+		"receiver_id":     post.PostedBy.String(),
+		"content":         fmt.Sprintf("%v liked your post", req.LikedBy),
+		"sent_at":         post.CreatedAt.String(),
+	})
+	if err != nil {
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.InvalidArgument, "can't create json message to send to rabbbitmq - LikePost", err)
+	}
+
+	err = s.rabbitmq.Channel.Publish(
+		rabbitmq.ExchangeName, // exchange
+		rabbitmq.RoutingKey,   // routing key
+		false,                 // mandatory
+		false,                 // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        messageJSON,
+		},
+	)
+	if err != nil {
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't send json to notification queue", err)
 	}
 
 	return &pb.LikePostResponse{
