@@ -59,12 +59,12 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get users subscribers from db - CreatePost", err)
 	}
 
-	for subscriberID := range userSubscribers {
-		messageJSON, err := json.Marshal(map[string]interface{}{
+	for i := 0; i < len(userSubscribers); i++ {
+		messageJSON, err := json.Marshal(map[string]any{
 			"title":           "New Notification",
-			"sender_username": userID.String(),
-			"receiver_id":     subscriberID,
-			"content":         req.GetBody(),
+			"sender_username": userID,
+			"receiver_id":     userSubscribers[i][0],
+			"content":         fmt.Sprintf("New post from %v", userID.String()),
 			"sent_at":         post.CreatedAt,
 		})
 		if err != nil {
@@ -252,7 +252,7 @@ func (s *server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.Lik
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't like post: LikePost", err)
 	}
-	messageJSON, err := json.Marshal(map[string]string{
+	messageJSON, err := json.Marshal(map[string]interface{}{
 		"title":           "New Notification",
 		"sender_username": req.LikedBy,
 		"receiver_id":     post.PostedBy.String(),
