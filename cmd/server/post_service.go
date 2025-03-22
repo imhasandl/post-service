@@ -54,6 +54,37 @@ func (s *server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't create post to database: CreatePost", err)
 	}
 
+	userSubscribers, err := s.db.GetSubscribers(ctx, post.PostedBy)
+	if err != nil {
+		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get users subscribers from db - CreatePost", err)
+	}
+
+	for subscriberID := range userSubscribers {
+		messageJSON, err := json.Marshal(map[string]interface{}{
+			"title":           "New Notification",
+			"sender_username": userID.String(),
+			"receiver_id":     subscriberID,
+			"content":         req.GetBody(),
+			"sent_at":         post.CreatedAt,
+		})
+		if err != nil {
+			return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't marshal notification message - CreatePost", err)
+		}
+
+		err = s.rabbitmq.Channel.Publish(
+			rabbitmq.ExchangeName, // exchange
+			rabbitmq.RoutingKey,   // routing key
+			false,                 // mandatory
+			false,                 // immediate
+			amqp.Publishing{
+				ContentType: "application/json",
+				Body:        messageJSON,
+			})
+		if err != nil {
+			return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't publish message to RabbitMQ - CreatePost", err)
+		}
+	}
+
 	return &pb.CreatePostResponse{
 		Post: &pb.Post{
 			Id:        post.ID.String(),
