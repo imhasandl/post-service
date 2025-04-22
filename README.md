@@ -23,14 +23,15 @@ The Post Service is responsible for managing posts, comments, and interactions i
 
 Create a `.env` file in the root directory with the following variables:
 
-```env.
+```env
 PORT=":50051"2.  Install dependencies using `go mod tidy`.
 DB_URL="postgres://username:password@host:port/database?sslmode=disable"Run the service using `go run main.go`.
 # DB_URL="postgres://username:password@db:port/database?sslmode=disable" // FOR DOCKER COMPOSE
 TOKEN_SECRET="YOUR_JWT_SECRET_KEY"
 RABBITMQ_URL="amqp://username:password@host:port"
-}
 ```
+
+---
 
 ### ChangePost
 
@@ -59,6 +60,8 @@ Updates an existing post.
 }
 ```
 
+---
+
 ### DeletePost
 
 Deletes a post.
@@ -78,6 +81,8 @@ Deletes a post.
    "result": "Post successfully deleted"
 }
 ```
+
+---
 
 ### LikePost
 
@@ -106,6 +111,8 @@ Likes a post.
 }
 ```
 
+---
+
 ### UnlikePost
 
 Removes a like from a post.
@@ -133,6 +140,8 @@ Removes a like from a post.
 }
 ```
 
+---
+
 ### GetLikersFromPost
 
 Retrieves the list of users who liked a post.
@@ -152,6 +161,8 @@ Retrieves the list of users who liked a post.
    "liked_by": ["UUID1", "UUID2", "UUID3"]
 }
 ```
+
+---
 
 ### GetPostByID
 
@@ -178,6 +189,8 @@ Retrieves a single post by its ID.
    }
 }
 ```
+
+---
 
 ### GetAllPosts
 
@@ -212,6 +225,8 @@ Retrieves all posts.
 }
 ```
 
+---
+
 ### ReportPost
 
 Reports a post for inappropriate content.
@@ -236,6 +251,8 @@ Reports a post for inappropriate content.
    }
 }
 ```
+
+---
 
 ### GetAllReports
 
@@ -266,6 +283,8 @@ Retrieves all reported posts.
 }
 ```
 
+---
+
 ### CreateComment
 
 Creates a new comment on a post.
@@ -293,6 +312,8 @@ Creates a new comment on a post.
 }
 ```
 
+---
+
 ### DeleteComment
 
 Deletes a comment.
@@ -313,6 +334,8 @@ Deletes a comment.
 }
 ```
 
+---
+
 ### ResetPosts
 
 Resets all posts (for development purposes only).
@@ -330,6 +353,8 @@ Resets all posts (for development purposes only).
    "status": "All posts successfully reset"
 }
 ```
+
+---
 
 ## RabbitMQ Integration
 
