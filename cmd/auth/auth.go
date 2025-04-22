@@ -8,6 +8,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// GetBearerTokenFromGrpc extracts the Bearer token from the gRPC context metadata.
+// It returns the token string or an error if the token is not found or is invalid.
 func GetBearerTokenFromGrpc(ctx context.Context) (string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
