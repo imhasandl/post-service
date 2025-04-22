@@ -23,15 +23,12 @@ The Post Service is responsible for managing posts, comments, and interactions i
 
 Create a `.env` file in the root directory with the following variables:
 
-```envtory.
+```env.
 PORT=":50051"2.  Install dependencies using `go mod tidy`.
 DB_URL="postgres://username:password@host:port/database?sslmode=disable"Run the service using `go run main.go`.
 # DB_URL="postgres://username:password@db:port/database?sslmode=disable" // FOR DOCKER COMPOSE
 TOKEN_SECRET="YOUR_JWT_SECRET_KEY"
 RABBITMQ_URL="amqp://username:password@host:port"
-```umentation is not ready yet.
-## gRPC MethodsThe service implements the following gRPC methods:### CreatePostCreates a new post.#### Request Format```json{   "body": "This is the content of my post"}```#### Response Format```json{   "post": {      "id": "UUID of the created post",      "created_at": "2023-01-01T12:00:00Z",      "updated_at": "2023-01-01T12:00:00Z",      "posted_by": "UUID of the user who created the post",      "body": "This is the content of my post"
-   }
 }
 ```
 
