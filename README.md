@@ -7,13 +7,11 @@
 # Post Service
 
 A microservice for post management in a social media application, built with Go and gRPC.
-* Retrieve posts by ID
 
 ## Overview posts by user ID
 
 * Update existing posts
 The Post Service is responsible for managing posts, comments, and interactions in the social media platform. It provides functionality for creating, retrieving, updating, and deleting posts, as well as liking/unliking posts, adding comments, and reporting inappropriate content. The service uses gRPC for communication with other services in the microservices architecture.
-* Implement pagination for efficient retrieval of large datasets.
 
 ## Prerequisitesror handling and logging.
 
