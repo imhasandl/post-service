@@ -25,11 +25,41 @@ Create a `.env` file in the root directory with the following variables:
 
 ```env
 PORT=":50051"2.  Install dependencies using `go mod tidy`.
-DB_URL="postgres://username:password@host:port/database?sslmode=disable"Run the service using `go run main.go`.
+DB_URL="postgres://username:password@host:port/database?sslmode=disable"
 # DB_URL="postgres://username:password@db:port/database?sslmode=disable" // FOR DOCKER COMPOSE
 TOKEN_SECRET="YOUR_JWT_SECRET_KEY"
 RABBITMQ_URL="amqp://username:password@host:port"
 ```
+
+---
+
+### CreatePost
+
+Creates new post
+
+#### Request format
+
+```json
+{
+   "body": "new body for post"
+}
+```
+
+#### Response format
+
+```json
+{
+   "id": "UUID of the post",
+   "created_at": "2023-01-01T12:00:00Z",
+   "updated_at": "2023-01-01T12:30:00Z",
+   "posted_by": "UUID of the user who created the post",
+   "body": "This is the updated content of my post",
+   "views: "number of views",
+   "likes": "number of post likes",
+   "liked_by": "an array that stores the uuid's of user who like the post"
+}
+```
+
 
 ---
 
