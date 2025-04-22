@@ -2,7 +2,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/imhasandl/post-service)](https://goreportcard.com/report/github.com/imhasandl/post-service)
 [![GoDoc](https://godoc.org/github.com/imhasandl/post-service?status.svg)](https://godoc.org/github.com/imhasandl/post-service)
 [![Coverage](https://codecov.io/gh/imhasandl/post-service/branch/main/graph/badge.svg)](https://codecov.io/gh/imhasandl/post-service)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/imhasandl/post-service)](https://golang.org/doc/devel/release.html)nication.
+[![Go Version](https://img.shields.io/github/go-mod/go-version/imhasandl/post-service)](https://golang.org/doc/devel/release.html)
 
 # Post Service
 
