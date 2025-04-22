@@ -6,19 +6,24 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// ExchangeName is the default RabbitMQ exchange used for post-related messages.
 const (
-	ExchangeName = "notifications.topic"
+	ExchangeName = "posts_exchange"
 	QueueName    = "notification_service_queue"
 	RoutingKey   = "message-service.notification"
 )
 
+// RabbitMQ represents a connection to a RabbitMQ message broker.
+// It provides methods for publishing and consuming messages.
 type RabbitMQ struct {
 	Conn    *amqp.Connection
 	Channel *amqp.Channel
 }
 
-func NewRabbitMQ(url string) (*RabbitMQ, error) {
-	conn, err := amqp.Dial(url)
+// NewRabbitMQ creates and initializes a new RabbitMQ client.
+// It establishes a connection to the RabbitMQ server using the provided connection URL.
+func NewRabbitMQ(connectionURL string) (*RabbitMQ, error) {
+	conn, err := amqp.Dial(connectionURL)
 	if err != nil {
 		log.Printf("can't connect to rabbit mq: %v", err)
 		return nil, err
@@ -76,15 +81,20 @@ func NewRabbitMQ(url string) (*RabbitMQ, error) {
 	}, nil
 }
 
-func (r *RabbitMQ) Close() {
+// Close closes the RabbitMQ connection and channel.
+// It should be called when the RabbitMQ client is no longer needed.
+func (r *RabbitMQ) Close() error {
 	if r.Channel != nil {
 		if err := r.Channel.Close(); err != nil {
 			log.Printf("error closing channel: %v", err)
+			return err
 		}
 	}
 	if r.Conn != nil {
 		if err := r.Conn.Close(); err != nil {
 			log.Printf("error closing connection: %v", err)
+			return err
 		}
 	}
+	return nil
 }

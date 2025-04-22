@@ -23,7 +23,10 @@ type server struct {
 	rabbitmq    *rabbitmq.RabbitMQ
 }
 
-func NewServer(db *database.Queries, tokenSecret string, rabbitmq *rabbitmq.RabbitMQ) *server {
+// NewServer creates and returns a new instance of the post service server implementation.
+// It initializes the server with the provided database connection, RabbitMQ client, and JWT secret.
+// Note: The function returns an implementation of the PostServiceServer interface.
+func NewServer(db *database.Queries, tokenSecret string, rabbitmq *rabbitmq.RabbitMQ) pb.PostServiceServer {
 	return &server{
 		pb.UnimplementedPostServiceServer{},
 		db,

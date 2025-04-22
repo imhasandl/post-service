@@ -8,14 +8,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// TokenType represents the type of JWT token used in the authentication system.
 type TokenType string
 
+// Constants for different token types
 const (
 	// TokenTypeAccess -
 	TokenTypeAccess TokenType = "media-access"
 )
 
-// Validated token -
+// ValidateJWT validates the provided JWT token and returns the claims if valid.
+// It checks token signature and expiration using the provided secret key.
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claimsStruct := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(
