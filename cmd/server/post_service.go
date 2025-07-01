@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/imhasandl/post-service/cmd/auth"
 	"github.com/imhasandl/post-service/cmd/helper"
 	"github.com/imhasandl/post-service/internal/database"
 	"github.com/imhasandl/post-service/internal/rabbitmq"
+	"github.com/imhasandl/post-service/internal/redis"
 	pb "github.com/imhasandl/post-service/protos"
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc/codes"
@@ -21,17 +23,16 @@ type server struct {
 	db          *database.Queries
 	tokenSecret string
 	rabbitmq    *rabbitmq.RabbitMQ
+	redis       *redis.RedisClient
 }
 
-// NewServer creates and returns a new instance of the post service server implementation.
-// It initializes the server with the provided database connection, RabbitMQ client, and JWT secret.
-// Note: The function returns an implementation of the PostServiceServer interface.
-func NewServer(db *database.Queries, tokenSecret string, rabbitmq *rabbitmq.RabbitMQ) pb.PostServiceServer {
+func NewServer(db *database.Queries, tokenSecret string, rabbitmq *rabbitmq.RabbitMQ, redis *redis.RedisClient) *server {
 	return &server{
 		pb.UnimplementedPostServiceServer{},
 		db,
 		tokenSecret,
 		rabbitmq,
+		redis,
 	}
 }
 
@@ -131,6 +132,29 @@ func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't parse id from request: GetPostByID", err)
 	}
 
+	// Try to get post from Redis cache
+	cacheKey := "post:" + postID.String()
+	cachedPost, err := s.redis.Get(ctx, cacheKey)
+
+	// If found in cache, unmarshal and return
+	if err == nil {
+		var post database.Post
+		if err := json.Unmarshal([]byte(cachedPost), &post); err == nil {
+			return &pb.GetPostByIDResponse{
+				Post: &pb.Post{
+					Id:        post.ID.String(),
+					CreatedAt: timestamppb.New(post.CreatedAt),
+					UpdatedAt: timestamppb.New(post.UpdatedAt),
+					PostedBy:  post.PostedBy.String(),
+					Body:      post.Body,
+					Views:     post.Views,
+					Likes:     post.Likes,
+				},
+			}, nil
+		}
+	}
+
+	// Not found in cache, get from database
 	post, err := s.db.GetPostByID(ctx, postID)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't get post from db: GetPostByID", err)
@@ -139,6 +163,12 @@ func (s *server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
 	err = s.db.IncrementPostViews(ctx, post.ID)
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.Internal, "can't increment post views: GetPost", err)
+	}
+
+	// Cache the post for future requests (15 minutes)
+	postBytes, err := json.Marshal(post)
+	if err == nil {
+		s.redis.Set(ctx, cacheKey, postBytes, 15*time.Minute)
 	}
 
 	return &pb.GetPostByIDResponse{
@@ -188,6 +218,10 @@ func (s *server) ChangePost(ctx context.Context, req *pb.ChangePostRequest) (*pb
 	if err != nil {
 		return nil, helper.RespondWithErrorGRPC(ctx, codes.PermissionDenied, "can't change post: ChangePost", err)
 	}
+
+	// Invalidate cache when post changes
+	cacheKey := "post:" + changedPost.ID.String()
+	s.redis.Delete(ctx, cacheKey)
 
 	createdAtProto := timestamppb.New(changedPost.CreatedAt)
 	updatedAtProto := timestamppb.New(changedPost.UpdatedAt)

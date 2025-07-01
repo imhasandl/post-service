@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"log"
 	"net"
-	"os"
-	"path/filepath"
 
+	"github.com/imhasandl/post-service/cmd/helper"
 	server "github.com/imhasandl/post-service/cmd/server"
 	"github.com/imhasandl/post-service/internal/database"
 	"github.com/imhasandl/post-service/internal/rabbitmq"
+	"github.com/imhasandl/post-service/internal/redis"
 	pb "github.com/imhasandl/post-service/protos"
-	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -19,49 +18,33 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(filepath.Join("./", ".env")); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
+	envConfig := helper.GetENVSecrets()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatalf("Set Port in env")
-	}
-
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		log.Fatalf("Set db connection in env")
-	}
-
-	tokenSecret := os.Getenv("TOKEN_SECRET")
-	if tokenSecret == "" {
-		log.Fatalf("Set db connection in env")
-	}
-
-	rabbitmqURL := os.Getenv("RABBITMQ_URL")
-	if rabbitmqURL == "" {
-		log.Fatalf("Set rabbit mq url path")
-	}
-
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", envConfig.Port)
 	if err != nil {
 		log.Fatalf("failed to listed: %v", err)
 	}
 
-	dbConn, err := sql.Open("postgres", dbURL)
+	dbConn, err := sql.Open("postgres", envConfig.DBURL)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
 	}
 	defer dbConn.Close()
 	dbQueries := database.New(dbConn)
 
-	rebbitmq, err := rabbitmq.NewRabbitMQ(rabbitmqURL)
+	rebbitmq, err := rabbitmq.NewRabbitMQ(envConfig.Rabbitmq)
 	if err != nil {
 		log.Fatalf("Error connecting to rabbit mq: %v", err)
 	}
 	defer rebbitmq.Close()
 
-	postServer := server.NewServer(dbQueries, tokenSecret, rebbitmq)
+	redis, err := redis.NewRedisClient(envConfig.RedisSecret)
+	if err != nil {
+		log.Fatalf("Error connecting to Redis: %v", err)
+	}
+	defer redis.Close()
+
+	postServer := server.NewServer(dbQueries, envConfig.TokenSecret, rebbitmq, redis)
 
 	s := grpc.NewServer()
 	pb.RegisterPostServiceServer(s, postServer)
